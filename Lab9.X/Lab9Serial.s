@@ -33,6 +33,8 @@
     ADC_SAVE EQU 0X24
     TIME EQU 0X25
 
+ DELAY_COUNT_H EQU 0X26
+ DELAY_COUNT_L EQU 0X27
     
      
  
@@ -42,85 +44,93 @@
     GOTO Start
 ; Interrupt vector
     PSECT isrVect, class=CODE, delta=2
-    GOTO INTERRUPT
+    GOTO Start
+;    GOTO INTERRUPT
 ; Setup Code
     PSECT code, class=CODE, delta=2
 Start:
 Setup:
     ; Bank 3 (ANSELH, ANSEL)
-    BSF STATUS, 5 ; Go to Bank 3
+    BSF STATUS, 5    ; Go to Bank 3
     BSF STATUS, 6
-    CLRF ANSELH ; Set pins to digital I/O
-    MOVLW 0X01 ; Pin AN0 selected
-    MOVWF ANSEL ; Sets Pins to analog
+    CLRF ANSELH      ; Set pins to digital I/O
+    MOVLW 0X00       ; Pin AN0 selected
+    MOVWF ANSEL      ; Sets AN0 to analog
     CLRF BAUDCTL
-   
+    
     ; Bank 2 (CM2CON0, CM2CON1)
     BSF STATUS, 5
-    BCF STATUS, 6 ; Go to Bank 2
-    CLRF CM2CON1 ; Disable Comparator 2
-    CLRF CM2CON0 ; Disable Comparator 1
+    BCF STATUS, 6    ; Go to Bank 2
+    CLRF CM2CON1     ; Disable Comparator 2
+    CLRF CM2CON0     ; Disable Comparator 1
    
     ; Bank 1 (TRISB, WPUB, IOCB, OPTION_REG, TRISC, TRISA, PIE1, PR2)
     BSF STATUS, 5
-    BCF STATUS, 6 ; Go to Bank 1
-    MOVLW 0x00 ; PortB as Outputs
+    BCF STATUS, 6    ; Go to Bank 1
+    MOVLW 0x00       ; PortB as Outputs
     MOVWF TRISB
-    MOVLW 0x00 ; Disable weak pull-ups on Port B
+    MOVLW 0x00       ; Disable weak pull-ups on Port B
     MOVWF WPUB
-    MOVLW 0x00 ; Disable interrupt-on-change for RB0/RB1
+    MOVLW 0x00       ; Disable interrupt-on-change for RB0/RB1
     MOVWF IOCB
-    CLRF OPTION_REG ; Enable global pull-ups, clear Timer0 settings
+    CLRF OPTION_REG  ; Enable global pull-ups, clear Timer0 settings
     MOVLW 0X80
-    MOVWF TRISC ; Port C as outputs
-    MOVLW 0x01 ; RA0 as an input
-    MOVWF TRISA ; Set RA0 as input for ADC
-    MOVLW 0x00 ; TMR2IE enabled
-    MOVWF PIE1
-    MOVLW 0xFF ; Timer2 period set for ~20ms (with pre/postscaler)
-    MOVWF PR2
-    CLRF ADCON1 ; Left justify
+    MOVWF TRISC      ; RC7 input (RX), RC6 output (TX)
+    MOVLW 0x00       ; RA0 as input
+    MOVWF TRISA      ; Set RA0 as input for ADC
+    CLRF PIE1        ; Disable all peripheral interrupts
+    CLRF PR2         ; **CORRECTED: Clear PR2 (no PWM)**
+    
+    ; UART Setup (Bank 1)
+    CLRF ADCON1      ; Left justify
     MOVLW 0X81
-    MOVWF SPBRG
+    MOVWF SPBRG      ; 9600 baud @ 20MHz
     MOVLW 0X00
     MOVWF SPBRGH
-    MOVLW 0X24
-    MOVWF TXSTA
-   
-    ; Bank 0 (INTCON, ports, peripherals)
-    BCF STATUS, 5 ; Go to Bank 0
-    BCF STATUS, 6
+    MOVLW 0X26
+    MOVWF TXSTA      ; BRGH=1, TXEN=1
+    
+ ; Bank 0 (INTCON, ports, peripherals)
+BCF STATUS, 5     ; Go to Bank 0
+BCF STATUS, 6
 
-    MOVLW 0X41 ; AN0 pin selected, ADON=1, ADCS=01 (Fosc/8)
-    MOVWF ADCON0
-    MOVLW 0x00 ; Interrupts disabled initially
-    MOVWF INTCON
-    MOVLW 0X00  ; Clear peripheral interrupt flags
-    MOVWF PIR1 
-    ;MOVLW 0XC0 ; Enable GIE and PEIE
-    ;MOVWF INTCON
-    CLRF CCP1CON ; Disable PWM
-    MOVLW 0X00
-    MOVWF PORTB ; Clear Port B
-    CLRF CCP2CON ; Disable second PWM
-    CLRF PORTA ; Clear Port A
-    CLRF PORTC ; Clear Port C
-    MOVLW 0X90
-    MOVWF RCSTA ; Disable serial control
-    CLRF SSPCON ; Disable serial port
-    CLRF T1CON ; Disable Timer1
-    CLRF PSTRCON ; Disable PWM pulse steering
-    CLRF CM2CON1 ; Disable Comparator 2
-    MOVLW 0x00
-    MOVWF TMR2 ; Reset Timer2
-    MOVLW 0x00 ; Prescaler 1:16, postscaler 1:5, TMR2ON=1
-    MOVWF T2CON
-    BSF ADCON0, 1 ; Start initial ADC conversion
+; **CRITICAL: Disable ADC completely**
+CLRF ADCON0       ; ADON=0, no conversions
+
+; **Enable UART FIRST (clean initialization)**
+MOVLW 0x90        ; SPEN=1, CREN=0
+MOVWF RCSTA
+
+MOVLW 0x00        ; Interrupts disabled
+MOVWF INTCON
+MOVLW 0X00
+MOVWF PIR1 
+MOVLW 0X00
+MOVWF PIR2
+
+; **Disable ALL noise sources**
+CLRF CCP1CON      ; No PWM1
+CLRF CCP2CON      ; No PWM2
+CLRF TMR2         ; Reset Timer2
+CLRF T2CON        ; Timer2 OFF
+CLRF ADCON0       ; ADC OFF (redundant but explicit)
+
+; Clear ports AFTER UART
+CLRF PORTB
+CLRF PORTA
+CLRF PORTC
+
+; Disable unused peripherals
+CLRF SSPCON       ; No I2C/SPI
+CLRF T1CON        ; No Timer1
+CLRF PSTRCON      ; No steering
    
 ; Main Program Loop
 MAINLOOP:
+    
+FLAGCHECK:
     BTFSS PIR1, 4 ;TXIF Check
-    GOTO $-1
+    GOTO FLAGCHECK
     MOVLW 0XFF
     MOVWF TXREG
     
@@ -131,7 +141,7 @@ MAINLOOP:
    
    
    
-INTERRUPT:
+;INTERRUPT:
   ;  RETFIE
 END
 
