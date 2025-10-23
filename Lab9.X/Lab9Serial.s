@@ -1,4 +1,3 @@
-; LAB 9
 ; Jacob Horsley
 ; RCET
 ; Fifth Semester
@@ -79,6 +78,8 @@ Setup:
     MOVLW 0x00       ; RA0 as input
     MOVWF TRISA      ; Set RA0 as input for ADC
     CLRF PIE1        ; Disable all peripheral interrupts
+    BSF PIE1,4   ;Enable Transmit interrupts
+    BSF PIE1, 5  ;Enable Recieve interrupts
     CLRF PR2         ; **CORRECTED: Clear PR2 (no PWM)**
     
     ; UART Setup (Bank 1)
@@ -124,17 +125,31 @@ CLRF PORTC
 CLRF SSPCON       ; No I2C/SPI
 CLRF T1CON        ; No Timer1
 CLRF PSTRCON      ; No steering
-   
+ 
+ 
+;For echo check
+;MOVLW 0b00100100
+;MOVLW 0X24 ;ASCII $ 
+;MOVWF TXREG
+ 
 ; Main Program Loop
 MAINLOOP:
     
 FLAGCHECK:
-    BTFSS PIR1, 4 ;TXIF Check
-    GOTO FLAGCHECK
-    MOVLW 0XFF
-    MOVWF TXREG
+    ;BTFSS PIR1, 4 ;TXIF Check
+    ;GOTO FLAGCHECK
+    ;MOVLW 0b00100100
+    ;MOVLW 0X24 ;ASCII $
+    ;MOVWF TXREG
     
-   INCF PORTB
+   
+   ;Recieving Echo check
+   BTFSS PIR1, 5
+   GOTO FLAGCHECK
+   MOVF RCREG, W
+   MOVWF TXREG
+    
+   ;INCF PORTB
    
 
    GOTO MAINLOOP
@@ -142,7 +157,5 @@ FLAGCHECK:
    
    
 ;INTERRUPT:
-  ;  RETFIE
+ ;   RETFIE
 END
-
-
