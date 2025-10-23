@@ -32,8 +32,9 @@
     ADC_SAVE EQU 0X24
     TIME EQU 0X25
 
- DELAY_COUNT_H EQU 0X26
- DELAY_COUNT_L EQU 0X27
+    DELAY_COUNT_H EQU 0X26
+    DELAY_COUNT_L EQU 0X27
+    POINTER EQU 0X28
     
      
  
@@ -43,7 +44,7 @@
     GOTO Start
 ; Interrupt vector
     PSECT isrVect, class=CODE, delta=2
-    GOTO Start
+    GOTO INTERRUPT
 ;    GOTO INTERRUPT
 ; Setup Code
     PSECT code, class=CODE, delta=2
@@ -77,7 +78,8 @@ Setup:
     MOVWF TRISC      ; RC7 input (RX), RC6 output (TX)
     MOVLW 0x00       ; RA0 as input
     MOVWF TRISA      ; Set RA0 as input for ADC
-    CLRF PIE1        ; Disable all peripheral interrupts
+    MOVLW 0X1A
+    MOVWF PIE1        ; Disable all peripheral interrupts
     BSF PIE1,4   ;Enable Transmit interrupts
     BSF PIE1, 5  ;Enable Recieve interrupts
     CLRF PR2         ; **CORRECTED: Clear PR2 (no PWM)**
@@ -102,7 +104,7 @@ CLRF ADCON0       ; ADON=0, no conversions
 MOVLW 0x90        ; SPEN=1, CREN=0
 MOVWF RCSTA
 
-MOVLW 0x00        ; Interrupts disabled
+MOVLW 0x00        ; Interrupts disabled COMMAND C0 IS TIMER2 INTERRUPT
 MOVWF INTCON
 MOVLW 0X00
 MOVWF PIR1 
@@ -112,8 +114,10 @@ MOVWF PIR2
 ; **Disable ALL noise sources**
 CLRF CCP1CON      ; No PWM1
 CLRF CCP2CON      ; No PWM2
-CLRF TMR2         ; Reset Timer2
-CLRF T2CON        ; Timer2 OFF
+MOVLW 0X00
+MOVWF TMR2         ; Reset Timer2
+MOVLW 0X7E
+MOVWF T2CON        ; Timer2 OFF
 CLRF ADCON0       ; ADC OFF (redundant but explicit)
 
 ; Clear ports AFTER UART
@@ -148,14 +152,19 @@ FLAGCHECK:
    GOTO FLAGCHECK
    MOVF RCREG, W
    MOVWF TXREG
-    
-   ;INCF PORTB
+   MOVWF PORTB 
    
-
+   
+   ;INCF PORTB
    GOTO MAINLOOP
    
-   
-   
-;INTERRUPT:
- ;   RETFIE
+INTERRUPT:
+    MOVLW 0XFF
+    MOVWF PORTA
+     
+    CLRF PORTA
+    
+    BANKSEL INTCON
+    BCF PIR1, 1
+    RETFIE
 END
