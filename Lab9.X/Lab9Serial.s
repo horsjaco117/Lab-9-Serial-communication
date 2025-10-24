@@ -78,7 +78,7 @@ Setup:
     MOVWF TRISC      ; RC7 input (RX), RC6 output (TX)
     MOVLW 0x00       ; RA0 as input
     MOVWF TRISA      ; Set RA0 as input for ADC
-    MOVLW 0X1A
+    MOVLW 0X00	    ;1A for max prescalers and postscalers
     MOVWF PIE1        ; Disable all peripheral interrupts
     BSF PIE1,4   ;Enable Transmit interrupts
     BSF PIE1, 5  ;Enable Recieve interrupts
@@ -91,7 +91,8 @@ Setup:
     MOVLW 0X00
     MOVWF SPBRGH
     MOVLW 0X26
-    MOVWF TXSTA      ; BRGH=1, TXEN=1
+    MOVWF TXSTA      ; BRGH=1, TXEN=1 0x26
+    
     
  ; Bank 0 (INTCON, ports, peripherals)
 BCF STATUS, 5     ; Go to Bank 0
@@ -101,10 +102,10 @@ BCF STATUS, 6
 CLRF ADCON0       ; ADON=0, no conversions
 
 ; **Enable UART FIRST (clean initialization)**
-MOVLW 0x90        ; SPEN=1, CREN=0
+MOVLW 0x90        ; SPEN=1, CREN=0 0x90
 MOVWF RCSTA
 
-MOVLW 0xE0        ; Interrupts disabled COMMAND C0 IS TIMER2 INTERRUPT
+MOVLW 0xC0        ; Interrupts disabled COMMAND C0 IS TIMER2 INTERRUPT
 MOVWF INTCON
 MOVLW 0X00
 MOVWF PIR1 
@@ -165,12 +166,18 @@ FLAGCHECK:
 INTERRUPT:
     
 INTCHECK:
+   BTFSS PIR1, 5
+   GOTO INTCHECK
    MOVF RCREG, W
    XORLW 0X24
    BTFSC STATUS, 2
    GOTO INTCHECK
    XORLW 0X24
+
+   SENDDATA:
    MOVWF TXREG
    MOVWF PORTB 
+   
+   _RETFIE:
    RETFIE
 END
