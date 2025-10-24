@@ -81,7 +81,8 @@ Setup:
     MOVLW 0X00	    ;1A for max prescalers and postscalers
     MOVWF PIE1        ; Disable all peripheral interrupts
     BSF PIE1,4   ;Enable Transmit interrupts
-    BSF PIE1, 5  ;Enable Recieve interrupts
+    BSF PIE1, 5
+    ;BCF PIE1, 5  ;Enable Recieve interrupts
     CLRF PR2         ; **CORRECTED: Clear PR2 (no PWM)**
     
     ; UART Setup (Bank 1)
@@ -159,9 +160,9 @@ FLAGCHECK:
    ;MOVWF TXREG
    ;MOVWF PORTB 
    
-   CLRF PORTA
-   MOVLW 0XFF
-   MOVWF PORTA
+   ;CLRF PORTA
+  ; MOVLW 0XFF
+   ;MOVWF PORTA
    
    ;INCF PORTB
    GOTO MAINLOOP
@@ -181,13 +182,245 @@ INTCHECK:
    SENDDATA:
    MOVWF TXREG	    ;data prepared to return to the PIC
    MOVWF PORTB	    ;Data display on board for troubleshooting
-   GOTO _RETFIE
-   ;GOTO SERVORX    ;Sends recieved data to the servo controls
+   ;GOTO _RETFIE
+   GOTO SERVO_TX    ;Sends recieved data to the servo controls
    
    HANDSHAKE:
    MOVLW 0X24
    MOVWF TXREG
    
+   GOTO _RETFIE
+   
+   SERVO_TX:
+    MOVWF W_TEMP	; Save W
+    SWAPF STATUS, W
+    MOVWF STATUS_TEMP	; Save STATUS
+    
+    ;BCF PIR1, 1         ; Clear TMR2IF
+    
+    CLRF ADC_SAVE       ; Clear position accumulator
+    
+    BTFSC PORTB, 3     ; Check bit 3
+    CALL BIT_3
+    BTFSC PORTB, 4     ; Check bit 4
+    CALL BIT_4
+    BTFSC PORTB, 5     ; Check bit 5
+    CALL BIT_5
+    BTFSC PORTB, 6     ; Check bit 6
+    CALL BIT_6
+    BTFSC PORTB, 7     ; Check bit 7
+    CALL BIT_7
+    
+    MOVF ADC_SAVE, W    ; Load position
+    ADDWF PCL, F        ; Jump table
+    
+    GOTO P1
+    GOTO P2
+    GOTO P2
+    GOTO P3
+    GOTO P4
+    GOTO P4
+    GOTO P5
+    GOTO P6
+    GOTO P6
+    GOTO P7
+    GOTO P8
+    GOTO P8
+    GOTO P9
+    GOTO P10
+    GOTO P10
+    GOTO P11
+    GOTO P12
+    GOTO P12
+    GOTO P13
+    GOTO P14
+    GOTO P14
+    GOTO P15
+    GOTO P16
+    GOTO P16
+    GOTO P17
+    GOTO P18
+    GOTO P18
+    GOTO P19
+    GOTO P20
+    GOTO P20
+    GOTO P21
+    GOTO P21
+    
+P1:
+    MOVLW 0x32
+    MOVWF TIME
+    BSF PORTA, 0        ; Modified: Pulse high on PORTB bit 0 (RB0)
+    GOTO DELAY
+    
+P2:
+    MOVLW 0x3C
+    MOVWF TIME
+    BSF PORTA, 0
+    GOTO DELAY
+    
+P3:
+    MOVLW 0x46
+    MOVWF TIME
+    BSF PORTA, 0
+    GOTO DELAY
+    
+P4:
+    MOVLW 0x50
+    MOVWF TIME
+    BSF PORTA, 0
+    GOTO DELAY
+    
+P5:
+    MOVLW 0x5A
+    MOVWF TIME
+    BSF PORTA, 0
+    GOTO DELAY
+    
+P6:
+    MOVLW 0x64
+    MOVWF TIME
+    BSF PORTA, 0
+    GOTO DELAY
+    
+P7:
+    MOVLW 0x6E
+    MOVWF TIME
+    BSF PORTA, 0
+    GOTO DELAY
+    
+P8:
+    MOVLW 0x78
+    MOVWF TIME
+    BSF PORTA, 0
+    GOTO DELAY
+    
+P9:
+    MOVLW 0x82
+    MOVWF TIME
+    BSF PORTA, 0
+    GOTO DELAY
+    
+P10:
+    MOVLW 0x8C
+    MOVWF TIME
+    BSF PORTA, 0
+    GOTO DELAY
+    
+P11:
+    MOVLW 0x96
+    MOVWF TIME
+    BSF PORTA, 0
+    GOTO DELAY
+    
+P12:
+    MOVLW 0xA0
+    MOVWF TIME
+    BSF PORTA, 0
+    GOTO DELAY
+    
+P13:
+    MOVLW 0xAA
+    MOVWF TIME
+    BSF PORTA, 0
+    GOTO DELAY
+    
+P14:
+    MOVLW 0xB4
+    MOVWF TIME
+    BSF PORTA, 0
+    GOTO DELAY
+    
+P15:
+    MOVLW 0xBE
+    MOVWF TIME
+    BSF PORTA, 0
+    GOTO DELAY
+    
+P16:
+    MOVLW 0xC8
+    MOVWF TIME
+    BSF PORTA, 0
+    GOTO DELAY
+    
+P17:
+    MOVLW 0xD2
+    MOVWF TIME
+    BSF PORTA, 0
+    GOTO DELAY
+    
+P18:
+    MOVLW 0xDC
+    MOVWF TIME
+    BSF PORTA, 0
+    GOTO DELAY
+    
+P19:
+    MOVLW 0xE6
+    MOVWF TIME
+    BSF PORTA, 0
+    GOTO DELAY
+    
+P20:
+    MOVLW 0xF2
+    MOVWF TIME
+    BSF PORTA, 0
+    GOTO DELAY
+    
+P21:
+    MOVLW 0xFF
+    MOVWF TIME
+    BSF PORTA, 0
+    GOTO DELAY
+    
+DELAY:
+    NOP
+    NOP
+    NOP
+    NOP
+    NOP
+    NOP
+    NOP
+    DECFSZ TIME, F
+    GOTO DELAY
+    
+    BCF PORTA, 0        ; Modified: Pulse low on PORTB bit 0 (RB0)
+   ; BSF ADCON0, 1       ; Start next ADC conversion
+    
+    BCF PIR1, 4		;Flag must be reset due to no tx data transmission.
+    GOTO _RETFIE
+BIT_3:
+    MOVLW 0x01
+    ADDWF ADC_SAVE, F
+    RETURN
+    
+BIT_4:
+    MOVLW 0x02
+    ADDWF ADC_SAVE, F
+    RETURN
+    
+BIT_5:
+    MOVLW 0x04
+    ADDWF ADC_SAVE, F
+    RETURN
+    
+BIT_6:
+    MOVLW 0x08
+    ADDWF ADC_SAVE, F
+    RETURN
+    
+BIT_7:
+    MOVLW 0x10
+    ADDWF ADC_SAVE, F
+    RETURN
+ 
+
    _RETFIE:
+    SWAPF STATUS_TEMP, W
+    MOVWF STATUS
+    SWAPF W_TEMP, F
+    SWAPF W_TEMP, W
+    
+    
    RETFIE
-EN
+   END
