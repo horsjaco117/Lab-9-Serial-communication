@@ -158,198 +158,422 @@ HANDLE_SERVO:
    
     ;SEARCHING FOR THE RIGHT BITS
     BTFSC PORTB,7
-    GOTO Bx1UUU
+    GOTO Bx1UUUU
     BTFSC PORTB,6
-    GOTO Bx01UU
+    GOTO Bx01UUU
     BTFSC PORTB,5
-    GOTO Bx001U
+    GOTO Bx001UU
     BTFSC PORTB,4
-    GOTO Bx0001
-    GOTO Bx0000
+    GOTO Bx0001U
+    GOTO Bx0000U
    
-Bx1UUU:
+Bx1UUUU:
     BTFSC PORTB,6
-    GOTO Bx11UU
+    GOTO Bx11UUU
     BTFSC PORTB,5
-    GOTO Bx101U
+    GOTO Bx101UU
     BTFSC PORTB,4
-    GOTO Bx1001
-    GOTO Bx1000
+    GOTO Bx1001U
+    GOTO Bx1000U
    
-Bx11UU:
+Bx11UUU:
     BTFSC PORTB,5
-    GOTO Bx111U
+    GOTO Bx111UU
     BTFSC PORTB,4
-    GOTO Bx1101
-    GOTO Bx1100
+    GOTO Bx1101U
+    GOTO Bx1100U
    
-Bx101U:
+Bx101UU:
     BTFSC PORTB,4
-    GOTO Bx1011
-    GOTO Bx1010
+    GOTO Bx1011U
+    GOTO Bx1010U
    
-Bx111U:
+Bx111UU:
     BTFSC PORTB,4
-    GOTO Bx1111
-    GOTO Bx1110
+    GOTO Bx1111U
+    GOTO Bx1110U
    
-Bx01UU:
+Bx01UUU:
     BTFSC PORTB,5
-    GOTO Bx011U
+    GOTO Bx011UU
     BTFSC PORTB,4
-    GOTO Bx0101
-    GOTO Bx0100
+    GOTO Bx0101U
+    GOTO Bx0100U
    
-Bx011U:
+Bx011UU:
     BTFSC PORTB,4
-    GOTO Bx0111
-    GOTO Bx0110
+    GOTO Bx0111U
+    GOTO Bx0110U
    
-Bx001U:
+Bx001UU:
     BTFSC PORTB,4
-    GOTO Bx0011
-    GOTO Bx0010
+    GOTO Bx0011U
+    GOTO Bx0010U
+   
+Bx0000U:
+    BTFSC PORTB,3
+    GOTO Bx00001
+    GOTO Bx00000
+   
+Bx0001U:
+    BTFSC PORTB,3
+    GOTO Bx00011
+    GOTO Bx00010
+   
+Bx0010U:
+    BTFSC PORTB,3
+    GOTO Bx00101
+    GOTO Bx00100
+   
+Bx0011U:
+    BTFSC PORTB,3
+    GOTO Bx00111
+    GOTO Bx00110
+   
+Bx0100U:
+    BTFSC PORTB,3
+    GOTO Bx01001
+    GOTO Bx01000
+   
+Bx0101U:
+    BTFSC PORTB,3
+    GOTO Bx01011
+    GOTO Bx01010
+   
+Bx0110U:
+    BTFSC PORTB,3
+    GOTO Bx01101
+    GOTO Bx01100
+   
+Bx0111U:
+    BTFSC PORTB,3
+    GOTO Bx01111
+    GOTO Bx01110
+   
+Bx1000U:
+    BTFSC PORTB,3
+    GOTO Bx10001
+    GOTO Bx10000
+   
+Bx1001U:
+    BTFSC PORTB,3
+    GOTO Bx10011
+    GOTO Bx10010
+   
+Bx1010U:
+    BTFSC PORTB,3
+    GOTO Bx10101
+    GOTO Bx10100
+   
+Bx1011U:
+    BTFSC PORTB,3
+    GOTO Bx10111
+    GOTO Bx10110
+   
+Bx1100U:
+    BTFSC PORTB,3
+    GOTO Bx11001
+    GOTO Bx11000
+   
+Bx1101U:
+    BTFSC PORTB,3
+    GOTO Bx11011
+    GOTO Bx11010
+   
+Bx1110U:
+    BTFSC PORTB,3
+    GOTO Bx11101
+    GOTO Bx11100
+   
+Bx1111U:
+    BTFSC PORTB,3
+    GOTO Bx11111
+    GOTO Bx11110
    
 ;SETTING THE RIGHT TIMES FOR THE SELECTED BITS
-Bx0000:
-    MOVLW 0x4D
+Bx00000:
+    MOVLW 0x26 ;38
     MOVWF PR2_PulseWidth
-    MOVLW 0xB9
+    MOVLW 0xBD ;189
     MOVWF PR2_PulseSpace
     BTFSC PulseSelect, 0
     GOTO PulseWidthTime
     GOTO PulseSpaceTime
    
-Bx0001:
-    MOVLW 0x52
+Bx00001:
+    MOVLW 0x2B ;43
     MOVWF PR2_PulseWidth
-    MOVLW 0xB8
+    MOVLW 0xBD ;189
     MOVWF PR2_PulseSpace
     BTFSC PulseSelect, 0
     GOTO PulseWidthTime
     GOTO PulseSpaceTime
    
-Bx0010:
-    MOVLW 0x57
+Bx00010:
+    MOVLW 0x30 ;48
     MOVWF PR2_PulseWidth
-    MOVLW 0xB7
+    MOVLW 0xBC ;188
     MOVWF PR2_PulseSpace
     BTFSC PulseSelect, 0
     GOTO PulseWidthTime
     GOTO PulseSpaceTime
    
-Bx0011:
-    MOVLW 0x5D
+Bx00011:
+    MOVLW 0x35 ;53
     MOVWF PR2_PulseWidth
-    MOVLW 0xB7
+    MOVLW 0xBC ;188
     MOVWF PR2_PulseSpace
     BTFSC PulseSelect, 0
     GOTO PulseWidthTime
     GOTO PulseSpaceTime
    
-Bx0100:
-    MOVLW 0x62
+Bx00100:
+    MOVLW 0x3A ;58
     MOVWF PR2_PulseWidth
-    MOVLW 0xB6
+    MOVLW 0xBB ;187
     MOVWF PR2_PulseSpace
     BTFSC PulseSelect, 0
     GOTO PulseWidthTime
     GOTO PulseSpaceTime
    
-Bx0101:
-    MOVLW 0x67
+Bx00101:
+    MOVLW 0x3F ;63
     MOVWF PR2_PulseWidth
-    MOVLW 0xB5
+    MOVLW 0xBA ;186
     MOVWF PR2_PulseSpace
     BTFSC PulseSelect, 0
     GOTO PulseWidthTime
     GOTO PulseSpaceTime
    
-Bx0110:
-    MOVLW 0x6C
+Bx00110:
+    MOVLW 0x44 ;68
     MOVWF PR2_PulseWidth
-    MOVLW 0xB5
+    MOVLW 0xBA ;186
     MOVWF PR2_PulseSpace
     BTFSC PulseSelect, 0
     GOTO PulseWidthTime
     GOTO PulseSpaceTime
    
-Bx0111:
-    MOVLW 0x71
+Bx00111:
+    MOVLW 0x49 ;73
     MOVWF PR2_PulseWidth
-    MOVLW 0xB4
+    MOVLW 0xB9 ;185
     MOVWF PR2_PulseSpace
     BTFSC PulseSelect, 0
     GOTO PulseWidthTime
     GOTO PulseSpaceTime
    
-Bx1000:
-    MOVLW 0x77
+Bx01000:
+    MOVLW 0x4E ;78
     MOVWF PR2_PulseWidth
-    MOVLW 0xB3
+    MOVLW 0xB8 ;184
     MOVWF PR2_PulseSpace
     BTFSC PulseSelect, 0
     GOTO PulseWidthTime
     GOTO PulseSpaceTime
    
-Bx1001:
-    MOVLW 0x7C
+Bx01001:
+    MOVLW 0x53 ;83
     MOVWF PR2_PulseWidth
-    MOVLW 0xB3
+    MOVLW 0xB8 ;184
     MOVWF PR2_PulseSpace
     BTFSC PulseSelect, 0
     GOTO PulseWidthTime
     GOTO PulseSpaceTime
    
-Bx1010:
-    MOVLW 0x81
+Bx01010:
+    MOVLW 0x58 ;88
     MOVWF PR2_PulseWidth
-    MOVLW 0xB2
+    MOVLW 0xB7 ;183
     MOVWF PR2_PulseSpace
     BTFSC PulseSelect, 0
     GOTO PulseWidthTime
     GOTO PulseSpaceTime
    
-Bx1011:
-    MOVLW 0x86
+Bx01011:
+    MOVLW 0x5E ;94
     MOVWF PR2_PulseWidth
-    MOVLW 0xB1
+    MOVLW 0xB6 ;182
     MOVWF PR2_PulseSpace
     BTFSC PulseSelect, 0
     GOTO PulseWidthTime
     GOTO PulseSpaceTime
    
-Bx1100:
-    MOVLW 0x8B
+Bx01100:
+    MOVLW 0x63 ;99
     MOVWF PR2_PulseWidth
-    MOVLW 0xB1
+    MOVLW 0xB6 ;182
     MOVWF PR2_PulseSpace
     BTFSC PulseSelect, 0
     GOTO PulseWidthTime
     GOTO PulseSpaceTime
    
-Bx1101:
-    MOVLW 0x91
+Bx01101:
+    MOVLW 0x68 ;104
     MOVWF PR2_PulseWidth
-    MOVLW 0xB0
+    MOVLW 0xB5 ;181
     MOVWF PR2_PulseSpace
     BTFSC PulseSelect, 0
     GOTO PulseWidthTime
     GOTO PulseSpaceTime
    
-Bx1110:
-    MOVLW 0x96
+Bx01110:
+    MOVLW 0x6D ;109
     MOVWF PR2_PulseWidth
-    MOVLW 0xAF
+    MOVLW 0xB5 ;181
     MOVWF PR2_PulseSpace
     BTFSC PulseSelect, 0
     GOTO PulseWidthTime
     GOTO PulseSpaceTime
    
-Bx1111:
-    MOVLW 0x9B
+Bx01111:
+    MOVLW 0x72 ;114
     MOVWF PR2_PulseWidth
-    MOVLW 0xAF
+    MOVLW 0xB4 ;180
+    MOVWF PR2_PulseSpace
+    BTFSC PulseSelect, 0
+    GOTO PulseWidthTime
+    GOTO PulseSpaceTime
+   
+Bx10000:
+    MOVLW 0x77 ;119
+    MOVWF PR2_PulseWidth
+    MOVLW 0xB3 ;179
+    MOVWF PR2_PulseSpace
+    BTFSC PulseSelect, 0
+    GOTO PulseWidthTime
+    GOTO PulseSpaceTime
+   
+Bx10001:
+    MOVLW 0x7C ;124
+    MOVWF PR2_PulseWidth
+    MOVLW 0xB3 ;179
+    MOVWF PR2_PulseSpace
+    BTFSC PulseSelect, 0
+    GOTO PulseWidthTime
+    GOTO PulseSpaceTime
+   
+Bx10010:
+    MOVLW 0x81 ;129
+    MOVWF PR2_PulseWidth
+    MOVLW 0xB2 ;178
+    MOVWF PR2_PulseSpace
+    BTFSC PulseSelect, 0
+    GOTO PulseWidthTime
+    GOTO PulseSpaceTime
+   
+Bx10011:
+    MOVLW 0x86 ;134
+    MOVWF PR2_PulseWidth
+    MOVLW 0xB1 ;177
+    MOVWF PR2_PulseSpace
+    BTFSC PulseSelect, 0
+    GOTO PulseWidthTime
+    GOTO PulseSpaceTime
+   
+Bx10100:
+    MOVLW 0x8B ;139
+    MOVWF PR2_PulseWidth
+    MOVLW 0xB1 ;177
+    MOVWF PR2_PulseSpace
+    BTFSC PulseSelect, 0
+    GOTO PulseWidthTime
+    GOTO PulseSpaceTime
+   
+Bx10101:
+    MOVLW 0x90 ;144
+    MOVWF PR2_PulseWidth
+    MOVLW 0xB0 ;176
+    MOVWF PR2_PulseSpace
+    BTFSC PulseSelect, 0
+    GOTO PulseWidthTime
+    GOTO PulseSpaceTime
+   
+Bx10110:
+    MOVLW 0x95 ;149
+    MOVWF PR2_PulseWidth
+    MOVLW 0xB0 ;176
+    MOVWF PR2_PulseSpace
+    BTFSC PulseSelect, 0
+    GOTO PulseWidthTime
+    GOTO PulseSpaceTime
+   
+Bx10111:
+    MOVLW 0x9A ;154
+    MOVWF PR2_PulseWidth
+    MOVLW 0xAF ;175
+    MOVWF PR2_PulseSpace
+    BTFSC PulseSelect, 0
+    GOTO PulseWidthTime
+    GOTO PulseSpaceTime
+   
+Bx11000:
+    MOVLW 0x9F ;159
+    MOVWF PR2_PulseWidth
+    MOVLW 0xAE ;174
+    MOVWF PR2_PulseSpace
+    BTFSC PulseSelect, 0
+    GOTO PulseWidthTime
+    GOTO PulseSpaceTime
+   
+Bx11001:
+    MOVLW 0xA4 ;164
+    MOVWF PR2_PulseWidth
+    MOVLW 0xAE ;174
+    MOVWF PR2_PulseSpace
+    BTFSC PulseSelect, 0
+    GOTO PulseWidthTime
+    GOTO PulseSpaceTime
+   
+Bx11010:
+    MOVLW 0xA9 ;169
+    MOVWF PR2_PulseWidth
+    MOVLW 0xAD ;173
+    MOVWF PR2_PulseSpace
+    BTFSC PulseSelect, 0
+    GOTO PulseWidthTime
+    GOTO PulseSpaceTime
+   
+Bx11011:
+    MOVLW 0xAE ;174
+    MOVWF PR2_PulseWidth
+    MOVLW 0xAC ;172
+    MOVWF PR2_PulseSpace
+    BTFSC PulseSelect, 0
+    GOTO PulseWidthTime
+    GOTO PulseSpaceTime
+   
+Bx11100:
+    MOVLW 0xB3 ;179
+    MOVWF PR2_PulseWidth
+    MOVLW 0xAC ;172
+    MOVWF PR2_PulseSpace
+    BTFSC PulseSelect, 0
+    GOTO PulseWidthTime
+    GOTO PulseSpaceTime
+   
+Bx11101:
+    MOVLW 0xB8 ;184
+    MOVWF PR2_PulseWidth
+    MOVLW 0xAB ;171
+    MOVWF PR2_PulseSpace
+    BTFSC PulseSelect, 0
+    GOTO PulseWidthTime
+    GOTO PulseSpaceTime
+   
+Bx11110:
+    MOVLW 0xBD ;189
+    MOVWF PR2_PulseWidth
+    MOVLW 0xAB ;171
+    MOVWF PR2_PulseSpace
+    BTFSC PulseSelect, 0
+    GOTO PulseWidthTime
+    GOTO PulseSpaceTime
+   
+Bx11111:
+    MOVLW 0xC2 ;194
+    MOVWF PR2_PulseWidth
+    MOVLW 0xAA ;170
     MOVWF PR2_PulseSpace
     BTFSC PulseSelect, 0
     GOTO PulseWidthTime
