@@ -159,6 +159,9 @@ FLAGCHECK:
    ;MOVWF TXREG
    ;MOVWF PORTB 
    
+   CLRF PORTA
+   MOVLW 0XFF
+   MOVWF PORTA
    
    ;INCF PORTB
    GOTO MAINLOOP
@@ -166,18 +169,25 @@ FLAGCHECK:
 INTERRUPT:
     
 INTCHECK:
-   BTFSS PIR1, 5
-   GOTO INTCHECK
-   MOVF RCREG, W
-   XORLW 0X24
-   BTFSC STATUS, 2
-   GOTO INTCHECK
-   XORLW 0X24
+   BTFSS PIR1, 5    ;If the EUART Flag is set then it continues to communication
+  ;GOTO SERVO_TX    ;The saved data can actually be sent from this portion
+   GOTO INTCHECK    ;Prevents innecessary transmission of zeroes
+   MOVF RCREG, W    ;Receiver register
+   XORLW 0X24	    ;If the code is 24 status register is set
+   BTFSC STATUS, 2  ;Checks for Handshake
+   GOTO HANDSHAKE
+   XORLW 0X24	    ;if the code isn't a 24 it is reverted back to what it was
 
    SENDDATA:
+   MOVWF TXREG	    ;data prepared to return to the PIC
+   MOVWF PORTB	    ;Data display on board for troubleshooting
+   GOTO _RETFIE
+   ;GOTO SERVORX    ;Sends recieved data to the servo controls
+   
+   HANDSHAKE:
+   MOVLW 0X24
    MOVWF TXREG
-   MOVWF PORTB 
    
    _RETFIE:
    RETFIE
-END
+EN
