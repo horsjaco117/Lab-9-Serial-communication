@@ -1,7 +1,7 @@
 ; Jacob Horsley
 ; RCET
 ; Fifth Semester
-; Serial Communication
+; Serial Communication with ADC
 ; Device: PIC16F883
 ; GITHUB:https://github.com/horsjaco117/Lab-9-Serial-communication
 ;-------------------------------------------------------------------------------
@@ -35,6 +35,8 @@
     PR2_PulseSpace EQU 0X28
     PulseSelect EQU 0X2B
     HANDSHAKE_FLAG EQU 0X2C
+    RESULT_HI EQU 0X2D
+    RESULT_LO EQU 0X2E
    
      CLRF TIME
      CLRF TIMER_COUNT
@@ -54,8 +56,8 @@ Setup:
     BSF STATUS, 5 ; Go to Bank 3
     BSF STATUS, 6
     CLRF ANSELH ; Set pins to digital I/O
-    MOVLW 0X01 ; Pin AN0 selected
-    MOVWF ANSEL ; Sets AN0 to analog
+    MOVLW 0X08 ; Pin AN3 selected
+    MOVWF ANSEL ; Sets AN3 to analog
     CLRF BAUDCTL
    
     ; Bank 2 (CM2CON0, CM2CON1)
@@ -76,8 +78,8 @@ Setup:
     CLRF OPTION_REG ; Enable global pull-ups, clear Timer0 settings
     MOVLW 0X80
     MOVWF TRISC ; RC7 input (RX), RC6 output (TX)
-    MOVLW 0X01 ; RA0 as input
-    MOVWF TRISA ; Set RA0 as input for ADC
+    MOVLW 0X08 ; RA3 as input
+    MOVWF TRISA ; Set RA3 as input for ADC
     MOVLW 0X02 ; TMR2IE enabled
     MOVWF PIE1 ; Disable all peripheral interrupts
     BSF PIE1, 5 ; Enable Receive interrupts
@@ -96,8 +98,9 @@ Setup:
  ; Bank 0 (INTCON, ports, peripherals)
 BCF STATUS, 5 ; Go to Bank 0
 BCF STATUS, 6
-; Disable ADC completely
-CLRF ADCON0 ; ADON=0, no conversions
+; Enable ADC on AN3
+MOVLW 0x8D ; ADCS=10 (Fosc/32), CHS=0011 (AN3), ADON=1
+MOVWF ADCON0
 ; Enable UART FIRST (clean initialization)
 MOVLW 0x90 ; SPEN=1, CREN=1 0x90
 MOVWF RCSTA
@@ -114,7 +117,6 @@ MOVLW 0X00
 MOVWF TMR2 ; Reset Timer2
 MOVLW 0X7E
 MOVWF T2CON ; Timer2 ON with settings for space
-CLRF ADCON0 ; ADC OFF (redundant but explicit)
 ; Clear ports AFTER UART
 CLRF PORTB
 CLRF PORTA
@@ -126,6 +128,15 @@ CLRF PSTRCON ; No steering
    
 ; Main Program Loop
 MAINLOOP:
+    BSF ADCON0, 1 ; Start ADC conversion
+WAIT_ADC:
+    BTFSC ADCON0, 1 ; Check if GO/DONE is still set
+    GOTO WAIT_ADC
+    MOVF ADRESH, W ; Get high 8 bits (left justify)
+    MOVWF RESULT_HI
+    BTFSS PIR1, 4 ; Wait for TXIF (TX ready)
+    GOTO $-1
+    MOVWF TXREG ; Send ADC high byte via serial
     GOTO MAINLOOP
    
 INTERRUPT:
