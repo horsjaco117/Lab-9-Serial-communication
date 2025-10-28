@@ -20,10 +20,10 @@
     ; CONFIG2
     CONFIG BOR4V = BOR40V ; Brown-out Reset Selection bit (set to 4.0V)
     CONFIG WRT = OFF ; Flash Program Memory Self Write Enable bits (Write protection off)
-  
+ 
 ; Include Statements
 #include <xc.inc>
-  
+ 
 ; Code Section
 ;------------------------------------------------------------------------------
 ; Register/Variable Setup
@@ -39,7 +39,7 @@
     RESULT_LO EQU 0X2E
     ADC_CONTINUOUS EQU 0X2F
     ADC_DATA EQU 0X30
-   
+  
      CLRF TIME
      CLRF TIMER_COUNT
      CLRF HANDSHAKE_FLAG
@@ -62,13 +62,13 @@ Setup:
     MOVLW 0X08 ; Pin AN3 selected
     MOVWF ANSEL ; Sets AN3 to analog
     CLRF BAUDCTL
-   
+  
     ; Bank 2 (CM2CON0, CM2CON1)
     BSF STATUS, 5
     BCF STATUS, 6 ; Go to Bank 2
     CLRF CM2CON1 ; Disable Comparator 2
     CLRF CM2CON0 ; Disable Comparator 1
-  
+ 
     ; Bank 1 (TRISB, WPUB, IOCB, OPTION_REG, TRISC, TRISA, PIE1, PR2)
     BSF STATUS, 5
     BCF STATUS, 6 ; Go to Bank 1
@@ -88,7 +88,7 @@ Setup:
     BSF PIE1, 5 ; Enable Receive interrupts
     MOVLW 0XF0
     MOVWF PR2 ; Initial PR2
-   
+  
     ; UART Setup (Bank 1)
     CLRF ADCON1 ; Left justify
     MOVLW 0X81
@@ -97,7 +97,7 @@ Setup:
     MOVWF SPBRGH
     MOVLW 0X26
     MOVWF TXSTA ; BRGH=1, TXEN=1 0x26
-   
+  
  ; Bank 0 (INTCON, ports, peripherals)
 BCF STATUS, 5 ; Go to Bank 0
 BCF STATUS, 6
@@ -128,10 +128,10 @@ CLRF PORTC
 CLRF SSPCON ; No I2C/SPI
 CLRF T1CON ; No Timer1
 CLRF PSTRCON ; No steering
-   
+  
 ; Main Program Loop
 MAINLOOP:
-    BTFSS ADC_CONTINUOUS, 0
+ BTFSS ADC_CONTINUOUS, 0
     GOTO MAINLOOP
     BTFSS PIR1, 4
     GOTO $-1
@@ -154,23 +154,23 @@ MAINLOOP:
     MOVLW 0X21
     MOVWF TXREG ; Send 0x21 delimiter
     BSF ADCON0, 1 ; Start ADC conversion
-    
-    
+   
+   
 WAIT_ADC:
     BTFSC ADCON0, 1 ; Check if GO/DONE is still set
     GOTO WAIT_ADC
     MOVF ADRESH, W ; Get high 8 bits (left justify)
     MOVWF RESULT_HI
-    
+   
     BSF STATUS, 5
     BCF STATUS, 6
-    MOVF 0X9E, W  ;ADRESL
+    MOVF 0X9E, W ;ADRESL
     BCF STATUS, 5
     BCF STATUS, 6
     MOVWF RESULT_LO
-    
-    
-    
+   
+   
+   
     BTFSS PIR1, 4 ; Wait for TXIF (TX ready)
     GOTO $-1
     MOVLW 0X21
@@ -179,13 +179,13 @@ WAIT_ADC:
     GOTO $-1
     MOVF RESULT_HI, W
     MOVWF TXREG ; Send ADC high byte via serial
-    
+   
   BTFSS PIR1, 4
   GOTO $-1
   MOVF RESULT_LO, W
   MOVWF TXREG
   GOTO MAINLOOP
-   
+  
 INTERRUPT:
     MOVWF W_TEMP
     SWAPF STATUS, W
@@ -195,32 +195,45 @@ INTERRUPT:
     BTFSC PIR1, 1
     GOTO HANDLE_SERVO
     GOTO INTERRUPT_END
-
 HANDLE_SERIAL:
     MOVF RCREG, W
-    XORLW 0X24
+    XORLW 0x24
     BTFSC STATUS, 2
-    GOTO HANDSHAKE
+        GOTO HANDSHAKE
+    ; --- Restore original byte ---
+    XORLW 0x24 ; W = original received byte again
+    ; --- Check for STOP_ADC (0x25) ---
+    XORLW 0x25
+    BTFSC STATUS, 2
+        GOTO STOP_ADC
+    XORLW 0x25 ; restore original byte again
+    ; --- Normal servo command (handshake must be active) ---
     BTFSS HANDSHAKE_FLAG, 0
-    GOTO INTERRUPT_END
-    XORLW 0X24
+        GOTO INTERRUPT_END
 SENDDATA:
     MOVWF TXREG
     MOVWF PORTB
     MOVWF ADC_DATA
     BCF HANDSHAKE_FLAG, 0
     GOTO INTERRUPT_END
-    
+   
 HANDSHAKE:
     MOVLW 0X24
     MOVWF TXREG
     BSF HANDSHAKE_FLAG, 0
     BSF ADC_CONTINUOUS, 0
     GOTO INTERRUPT_END
-    
+   
+STOP_ADC:
+    MOVLW 0X25
+    MOVWF TXREG
+    BCF ADC_CONTINUOUS,0
+    GOTO INTERRUPT_END
+   
 HANDLE_SERVO:
     DECFSZ TIMER_COUNT, F
     GOTO INTERRUPT_END
+    
     
     ;SEARCHING FOR THE RIGHT BITS
     BTFSC PORTB,7
