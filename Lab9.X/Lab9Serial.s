@@ -37,10 +37,13 @@
     HANDSHAKE_FLAG EQU 0X2C
     RESULT_HI EQU 0X2D
     RESULT_LO EQU 0X2E
+    ADC_CONTINUOUS EQU 0X2F
+    ADC_DATA EQU 0X30
    
      CLRF TIME
      CLRF TIMER_COUNT
      CLRF HANDSHAKE_FLAG
+     CLRF ADC_CONTINUOUS
 ; Start of Program
 ; Reset vector address
     PSECT resetVect, class=CODE, delta=2
@@ -128,16 +131,60 @@ CLRF PSTRCON ; No steering
    
 ; Main Program Loop
 MAINLOOP:
+    BTFSS ADC_CONTINUOUS, 0
+    GOTO MAINLOOP
+    BTFSS PIR1, 4
+    GOTO $-1
+    MOVLW 0X00
+    MOVWF TXREG
+    BTFSS PIR1, 4
+    GOTO $-1
+    MOVLW 0X00
+    MOVWF TXREG
+    BTFSS PIR1, 4
+    GOTO $-1
+    MOVLW 0x00
+    MOVWF TXREG
+    BTFSS PIR1, 4
+    GOTO $-1
+    MOVLW 0X00
+    MOVWF TXREG
+    BTFSS PIR1, 4 ; Wait for TXIF (TX ready)
+    GOTO $-1
+    MOVLW 0X21
+    MOVWF TXREG ; Send 0x21 delimiter
     BSF ADCON0, 1 ; Start ADC conversion
+    
+    
 WAIT_ADC:
     BTFSC ADCON0, 1 ; Check if GO/DONE is still set
     GOTO WAIT_ADC
     MOVF ADRESH, W ; Get high 8 bits (left justify)
     MOVWF RESULT_HI
+    
+    BSF STATUS, 5
+    BCF STATUS, 6
+    MOVF 0X9E, W  ;ADRESL
+    BCF STATUS, 5
+    BCF STATUS, 6
+    MOVWF RESULT_LO
+    
+    
+    
     BTFSS PIR1, 4 ; Wait for TXIF (TX ready)
     GOTO $-1
+    MOVLW 0X21
+    MOVWF TXREG ; Send 0x21 delimiter
+    BTFSS PIR1, 4 ; Wait for TXIF again
+    GOTO $-1
+    MOVF RESULT_HI, W
     MOVWF TXREG ; Send ADC high byte via serial
-    GOTO MAINLOOP
+    
+  BTFSS PIR1, 4
+  GOTO $-1
+  MOVF RESULT_LO, W
+  MOVWF TXREG
+  GOTO MAINLOOP
    
 INTERRUPT:
     MOVWF W_TEMP
@@ -160,6 +207,7 @@ HANDLE_SERIAL:
 SENDDATA:
     MOVWF TXREG
     MOVWF PORTB
+    MOVWF ADC_DATA
     BCF HANDSHAKE_FLAG, 0
     GOTO INTERRUPT_END
     
@@ -167,6 +215,7 @@ HANDSHAKE:
     MOVLW 0X24
     MOVWF TXREG
     BSF HANDSHAKE_FLAG, 0
+    BSF ADC_CONTINUOUS, 0
     GOTO INTERRUPT_END
     
 HANDLE_SERVO:
