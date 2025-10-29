@@ -131,108 +131,95 @@ CLRF PSTRCON ; No steering
   
 ; Main Program Loop
 MAINLOOP:
- BTFSS ADC_CONTINUOUS, 0
-    GOTO MAINLOOP
-    BTFSS PIR1, 4
-    GOTO $-1
-    MOVLW 0X00
-    MOVWF TXREG
-    BTFSS PIR1, 4
-    GOTO $-1
-    MOVLW 0X00
-    MOVWF TXREG
-    BTFSS PIR1, 4
-    GOTO $-1
-    MOVLW 0x00
-    MOVWF TXREG
-    BTFSS PIR1, 4
-    GOTO $-1
-    MOVLW 0X00
-    MOVWF TXREG
-    BTFSS PIR1, 4 ; Wait for TXIF (TX ready)
-    GOTO $-1
-    MOVLW 0X21
-    MOVWF TXREG ; Send 0x21 delimiter
-    BSF ADCON0, 1 ; Start ADC conversion
+    BTFSS ADC_CONTINUOUS, 0 ;Flag for continuous ADC to enable
+    BTFSS PIR1, 4	    ;Transmit ready
+    GOTO $-1		    ;Goes back to last line
+    MOVLW 0X00		    ;Sends 0 for Servo packet position
+    MOVWF TXREG		    ;Goes to transmission
+    BTFSS PIR1, 4	    ; Wait for TXIF (TX ready)
+    GOTO $-1		    ;Goes to last line
+    MOVLW 0X25		    ;ADC identifier in packet
+    MOVWF TXREG		    ; Send 0x21 delimiter
+    BSF ADCON0, 1	    ; Start ADC conversion
    
    
 WAIT_ADC:
     BTFSC ADCON0, 1 ; Check if GO/DONE is still set
-    GOTO WAIT_ADC
+    GOTO WAIT_ADC   ;Waits until ADC is ready
     MOVF ADRESH, W ; Get high 8 bits (left justify)
-    MOVWF RESULT_HI
+    MOVWF RESULT_HI ;Register that saves data
    
-    BSF STATUS, 5
+    BSF STATUS, 5   ;Bank 1
     BCF STATUS, 6
-    MOVF 0X9E, W ;ADRESL
-    BCF STATUS, 5
+    MOVF 0X9E, W    ;ADRESL
+    BCF STATUS, 5   ;Bank 0
     BCF STATUS, 6
-    MOVWF RESULT_LO
+    MOVWF RESULT_LO ;Save low byte of ADC aquired data
    
    
    
     BTFSS PIR1, 4 ; Wait for TXIF (TX ready)
-    GOTO $-1
-    MOVLW 0X21
+    GOTO $-1	  ;Return to last line
+    MOVLW 0X21	  
     MOVWF TXREG ; Send 0x21 delimiter
     BTFSS PIR1, 4 ; Wait for TXIF again
-    GOTO $-1
-    MOVF RESULT_HI, W
+    GOTO $-1	  ;Return to last line
+    MOVF RESULT_HI, W ;Transmit the high byte of the saved data
     MOVWF TXREG ; Send ADC high byte via serial
    
-  BTFSS PIR1, 4
+  BTFSS PIR1, 4	;Ready to transmit?
   GOTO $-1
-  MOVF RESULT_LO, W
+  MOVF RESULT_LO, W ;Send low byte next
   MOVWF TXREG
-  GOTO MAINLOOP
+  GOTO MAINLOOP    ;Start over again
   
 INTERRUPT:
-    MOVWF W_TEMP
+    MOVWF W_TEMP    ;Save data from main loop
     SWAPF STATUS, W
     MOVWF STATUS_TEMP
-    BTFSC PIR1, 5
+    BTFSC PIR1, 5   ;RX interrupt flag when set handles any serial data
     GOTO HANDLE_SERIAL
-    BTFSC PIR1, 1
-    GOTO HANDLE_SERVO
-    GOTO INTERRUPT_END
+    BTFSC PIR1, 1   ;Timer2 flag immediately goes to send serial data when set
+    GOTO HANDLE_SERVO ;All the servo code 32 byte resolution
+    GOTO INTERRUPT_END ;Nothing to change or transmit/recieve
 HANDLE_SERIAL:
-    MOVF RCREG, W
-    XORLW 0x24
-    BTFSC STATUS, 2
-        GOTO HANDSHAKE
+    MOVF RCREG, W ;Moves recieved data into working register
+    XORLW 0x24	  ; If data is 24 status register bit 2 is cleared
+    BTFSC STATUS, 2 ;Checks for handshake
+        GOTO HANDSHAKE	;returns handshake byte back
     ; --- Restore original byte ---
     XORLW 0x24 ; W = original received byte again
     ; --- Check for STOP_ADC (0x25) ---
-    XORLW 0x25
+    XORLW 0x25	;When a 25 is recieved the ADC stops after starting
     BTFSC STATUS, 2
-        GOTO STOP_ADC
+        GOTO STOP_ADC	;Stops the ADC aqcuisition
     XORLW 0x25 ; restore original byte again
     ; --- Normal servo command (handshake must be active) ---
-    BTFSS HANDSHAKE_FLAG, 0
-        GOTO INTERRUPT_END
+    BTFSS HANDSHAKE_FLAG, 0 ;Sends to Serial out
+        GOTO INTERRUPT_END  ;Ends interrupt if nothing happened here
 SENDDATA:
-    MOVWF TXREG
-    MOVWF PORTB
-    MOVWF ADC_DATA
-    BCF HANDSHAKE_FLAG, 0
-    GOTO INTERRUPT_END
+    MOVWF TXREG	;Sends data
+    MOVWF PORTB	;Servo data is displayed on PortB generally
+    MOVWF ADC_DATA ;ADC data is sent in this register
+    BCF HANDSHAKE_FLAG, 0 ;resets handshake flag
+    GOTO INTERRUPT_END ;ends communication
    
 HANDSHAKE:
-    MOVLW 0X24
-    MOVWF TXREG
-    BSF HANDSHAKE_FLAG, 0
-    BSF ADC_CONTINUOUS, 0
-    GOTO INTERRUPT_END
+    MOVLW 0X24		    ;Confirms handshake happend
+    MOVWF TXREG		    ;Data is sent to the computer
+    BSF HANDSHAKE_FLAG, 0   ;reset handshake flag
+    BSF ADC_CONTINUOUS, 0   ;Reset the ADC flag
+    GOTO INTERRUPT_END	    ;All business is done here
    
 STOP_ADC:
-    MOVLW 0X25
-    MOVWF TXREG
-    BCF ADC_CONTINUOUS,0
-    GOTO INTERRUPT_END
+    MOVLW 0X25		    ;Command to stop the ADC
+    MOVWF TXREG		    ;Sends 25 to indicate data after is ADC
+    BCF ADC_CONTINUOUS,0    ;Clear the ADC flag
+    GOTO INTERRUPT_END	    ;Finished with ADC to cleanup
    
 HANDLE_SERVO:
-    DECFSZ TIMER_COUNT, F
-    GOTO INTERRUPT_END
+    DECFSZ TIMER_COUNT, F   ;Servo timer decrement
+    GOTO INTERRUPT_END	    ;End of interrupt
     
     
     ;SEARCHING FOR THE RIGHT BITS
@@ -661,14 +648,14 @@ Bx11111:
 PulseWidthTime:
     MOVF PR2_PulseWidth,0
     BSF STATUS,5
-    MOVWF PR2
+    MOVWF PR2	;Sets timer 2 period
     BCF STATUS,5
     MOVLW 0x01
     MOVWF TIMER_COUNT
     BSF PORTA,1
     BCF PulseSelect, 0
-    MOVLW 0x7D
-    MOVWF T2CON
+    MOVLW 0x7D	;Controls the registers for timer2
+    MOVWF T2CON	    
     GOTO INTERRUPT_END
     
 PulseSpaceTime:
